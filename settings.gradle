@@ -1,0 +1,3 @@
+rootProject.name = 'netty-study'
+include 'echo-server'
+
