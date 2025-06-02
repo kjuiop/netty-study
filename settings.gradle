@@ -1,3 +1,5 @@
 rootProject.name = 'netty-study'
 include 'echo-server'
+include 'echo-server:Server'
+findProject(':echo-server:Server')?.name = 'Server'
 
