@@ -1,10 +1,10 @@
 plugins {
     id 'java'
     id 'application'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 group = 'com.gig'
-version = '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -15,8 +15,20 @@ application {
 }
 
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+    implementation 'io.netty:netty-all:4.1.108.Final'
+}
+
+jar {
+    archiveBaseName = 'netty-study'
+    archiveVersion = ''
+    archiveExtension = 'jar'
+
+    manifest {
+        attributes(
+                'Main-Class': application.mainClass.get()
+        )
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 test {
