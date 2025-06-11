@@ -19,6 +19,8 @@ public class EchoServer {
     }
 
     public void start() throws InterruptedException {
+        // netty 의 쓰레드 풀
+        // NioEventLoopGroup : 비동기 selector 를 기반으로 클라이언트 I/O 처리를 담당
         EventLoopGroup group = new NioEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
@@ -32,6 +34,7 @@ public class EchoServer {
                         }
                     });
 
+            // b.bind().sync() 는 서버 바인딩이 될 때까지 블로킹하여 완료될 때까지 기다림
             ChannelFuture f = b.bind().sync();
             System.out.println(EchoServer.class.getName() + " started and listening for connections on " + f.channel().localAddress());
             f.channel().closeFuture().sync();
@@ -39,6 +42,7 @@ public class EchoServer {
             System.err.println("EchoServer interrupted, err : " + ie.getMessage());
             ie.printStackTrace(System.err);
         } finally {
+            System.out.println(EchoServer.class.getName() + " gracefully shutdown ");
             group.shutdownGracefully().sync();
         }
     }

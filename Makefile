@@ -1,3 +1,5 @@
+.PHONY: all build move_jar config
+
 PROJECT_PATH=$(shell pwd)
 
 TARGET_DIR=bin
@@ -14,15 +16,11 @@ config:
 	@if [ ! -d $(TARGET_DIR) ]; then mkdir $(TARGET_DIR); fi
 
 build:
-	./gradlew clean build
+	@echo "Building Server"
+	./gradlew :echo-server:Server:clean :echo-server:Server:build
+	@echo "Building Client"
+	./gradlew :echo-server:Client:clean :echo-server:Client:build
 
 move_jar:
 	cp $(ECHO_SERVER)/$(MODULE_DIR)/$(MODULE_JAR) $(PROJECT_PATH)/$(TARGET_DIR)
 	cp $(ECHO_CLIENT)/$(MODULE_DIR)/$(MODULE_JAR) $(PROJECT_PATH)/$(TARGET_DIR)
-
-target-version:
-	@echo "========================================"
-	@echo "APP_VERSION    : $(VERSION_NUM)"
-	@echo "BUILD_NUM      : $(BUILD_NUM)"
-	@echo "TARGET_VERSION : $(TARGET_VERSION)"
-	@echo "========================================"
