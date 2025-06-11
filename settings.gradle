@@ -1,5 +1,7 @@
 rootProject.name = 'netty-study'
-include 'echo-server'
-include 'echo-server:Server'
-findProject(':echo-server:Server')?.name = 'Server'
 
+include 'echo-server:Server'
+include 'echo-server:Client'
+
+project(':echo-server:Server').name = 'Server'
+project(':echo-server:Client').name = 'Client'

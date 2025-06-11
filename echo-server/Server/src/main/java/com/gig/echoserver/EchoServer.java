@@ -44,7 +44,7 @@ public class EchoServer {
     }
 
     public static void main(String []args) throws InterruptedException {
-        int port = Config.getInt("server.port", 8080);
+        int port = Config.getInt("server.port", 8099);
         new EchoServer(port).start();
     }
 }

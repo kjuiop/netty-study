@@ -1,0 +1,37 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+group = 'com.gig'
+
+repositories {
+    mavenCentral()
+}
+
+application {
+    mainClass = 'com.gig.echoserver.EchoClient'
+}
+
+jar {
+    archiveBaseName = 'netty-study'
+    archiveVersion = ''
+    archiveExtension = 'jar'
+
+    manifest {
+        attributes(
+                'Main-Class': application.mainClass.get()
+        )
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+
+dependencies {
+    implementation 'io.netty:netty-all:4.1.108.Final'
+}
+
+test {
+    useJUnitPlatform()
+}
