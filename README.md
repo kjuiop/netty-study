@@ -130,3 +130,82 @@ public class SocketApplication {
   - 인바운드 이벤트 : 연결 활성화 또는 비활성화, 데이터 읽기, 사용자 이벤트, 오류 이벤트
   - 아웃바운드 이벤트 : 원격 피어로 연결 열기 또는 닫기, 소켓으로 데이터 쓰기 또는 플러시
 
+
+<br />
+
+# 네티 컴포넌트와 설계
+
+- 자바 NIO 기반의 비동기식 이벤트 기반 구현을 이용해 고부하 조건에서도 애플리케이션 성능과 확장성을 최대한으로 보장한다.
+- 애플리케이션 논리를 네트워크 레이어로부터 분리하는 다양한 설계 패턴을 활용해 코드의 테스트 용이성, 모듈성, 재사용성을 극대화 한다.
+
+<br />
+
+### Channel, EventLoop, ChannelFuture
+
+- Channel : 소켓 (Socket)
+- EventLoop : 제어 흐름, 멀티스레딩, 동시성 제어
+- ChannelFuture : 비동기 알림
+
+<br />
+
+### Channel Interface
+
+- EmbeddedChannel
+- LocalServerChannel
+- NioDatagramChannel
+- NioSctpChannel
+- NioSocketChannel
+
+<br />
+
+### EventLoop 인터페이스
+
+- 한 EventLoopGroup 은 하나 이상의 EventLoop 를 포함한다.
+- 한 EventLoop 는 수명 주기 동안 한 Thread 로 바인딩 된다.
+- 한 EventLoop 에서 처리되는 모든 입출력 이벤트는 해당 전용 Thread 에서 처리된다.
+- 한 Channel 은 수명주기 동안 한 EventLoop 에 등록할 수 있다.
+- 한 EventLoop 를 하나 이상의 Channel 로 할당할 수 있다.
+
+<br />
+
+### ChannelFuture 인터페이스
+
+- 네티의 모든 입출력 작업은 비동기로 작업이 즉시 반환되지 않을 수 있기 때문에 나중에 결과를 확인할 수 있는 방법이 필요하다.
+- ChannelFutureListener 를 등록하면 작업 여부에 대한 알림을 받을 수 있다.
+
+<br />
+
+### ChannelHandler 와 ChannelPipeline
+
+- ChannelHandler 의 메서드가 네트워크 이벤트에 의해 트리거가 된다.
+- Channel 이 생성되면 자동으로 자체적인 ChannelPipeline 이 할당된다.
+- 동작
+  - ChannelInitializer 구현은 ServerBootstrap 에 등록된다.
+  - ChannelInitializer.initChannel() 이 호출되면 ChannelInitializer 가 ChannelHandler 의 커스텀 집합을 파이프라인에 설치한다.
+  - ChannelInitializer 는 ChannelPipeline 에서 자신을 제거한다.
+- 인바운드, 아웃바운드 핸들러
+  - 각 메서드에 인수로 제공되는 ChannelHandlerContext 를 이용해 이벤트를 현재 체인의 다음 핸들러로 전달할 수 있다.
+  - ChannelHandlerAdapter
+  - ChannelInboundHandlerAdapter
+  - ChannelOutboundHandlerAdapter
+  - ChannelDuplexHandlerAdapter
+
+<br />
+
+### 인코더와 디코더
+
+- 인바운드 메시지는 바이트에서 다른 포맷으로 변환되는 디코딩을 거친다.
+- 아웃바운드 메시지는 반대로 현재 포맷에서 바이트로 인코딩된다.
+- 네트워크 데이터는 반드시 연속된 바이트여야 하기 때문이다.
+
+<br />
+
+### SimpleChannelInboundHandler 추상 클래스
+
+- 이 핸들러에서 기본 클래스의 메서드를 하나 이상 재정의하고 모든 핸들러 메서드에 입력 인수로 전달되는 ChannelHandlerContext 에 대한 참조를 얻는다.
+- channelRead0(ChannelHandlerContext.T) 로 채널 메시지를 처리할 수 있다.
+
+<br />
+
+
+

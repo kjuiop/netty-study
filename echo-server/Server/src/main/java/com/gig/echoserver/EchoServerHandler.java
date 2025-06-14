@@ -7,6 +7,7 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
+// ChannelHandler 를 여러 채널 간에 안전하게 공유할 수 있음을 나타냄
 @Sharable
 public class EchoServerHandler extends ChannelInboundHandlerAdapter {
 
