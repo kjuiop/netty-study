@@ -5,3 +5,5 @@ include 'echo-server:Client'
 
 project(':echo-server:Server').name = 'Server'
 project(':echo-server:Client').name = 'Client'
+include 'java-network'
+
