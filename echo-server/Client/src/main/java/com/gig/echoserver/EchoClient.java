@@ -36,6 +36,8 @@ public class EchoClient {
                         }
                     });
 
+            // 서버에 연결될 때까지 기다리는 구간
+            // 서버에 연결될 때까지 기다린 다음, 연결된 채널이 닫힐 때까지 프로그램을 종료하지 않고 대기한다.
             ChannelFuture f = b.connect().sync();
             f.channel().closeFuture().sync();
         } catch(InterruptedException ie) {
