@@ -208,4 +208,141 @@ public class SocketApplication {
 <br />
 
 
+## 전송 API
+
+- Channel 인터페이스는 모든 입출력 작업에 이용되므로 전송 API 의 핵심이다.
+
+![Image](images/channel_interface.png)
+
+- Channel 에 ChannelPipeline 과 ChannelConfig 가 할당되어 있다.
+  - ChannelConfig 는 Channel 에 대한 모든 구성 설정을 포함하며 임시 변경을 지원한다.
+  - 특정한 전송에 고유 설정이 필요할 때는 ChannelConfig 의 하위 형식도 구현할 수 있다.
+
+
+- Channel 은 고유하므로 정렬 순서를 보장하기 위해 java.lang.Comparable 의 하위 인터페이스로 선언한다.
+  - 즉, 고유한 두 Channel 인스턴스가 동일한 해시 코드를 반환하는 겨우 AbstractChannel 의 compareTo() 구현에서 Error 가 발생한다.
+
+
+- ChannelPipeline 은 인바운드와 아웃바운드 데이터와 이벤트에 적용될 ChannelHandler 인스턴스를 모두 포함한다.
+
+
+- ChannelHandler 는 애플리케이션에서 상태 변경과 데이터 처리를 위한 논리를 구현한다.
+  - 데이터를 한 포맷에서 다른 포맷으로 변환
+  - 예외에 대한 알림 제공
+  - Channel 의 활성화 또는 비활성화에 대한 알림 제공
+  - Channel 을 EventLoop 에 등록할 때 또는 등록 해제할 때 알림 제공
+  - 사용자 정의 이벤트에 대한 알림 제공
+
+
+### 가로채기 필터
+
+- ChannelPipeline 은 가로채기 필터라는 공통 설꼐 패턴을 구현한다. 이 패턴에서는 여러 명령이 체인으로 연결되고 한 명령의 출력이 다음 명령의 입력이 된다.
+
+- 채널의 메소드
+
+| 메서드 이름 | 설명 |
+| --- | --- |
+| eventLoop | Channel 에 할당된 EventLoop 를 반환한다. |
+| pipeline | Channel 에 할당된 ChannelPipeline 를 반환한다. |
+| isActive | Channel 이 활성 상태일 때 true 를 반환한다. 활성의 의미는 기본 전송이 무엇인지에 따라 달라진다. 예를 들어 Socket 전송은 원격 피어로 연결되면 활성 상태지만, Datagram 전송은 열리면 활성 상태다. |
+| localAddress | 로컬 SocketAddress 를 반환한다. |
+| remoteAddress | 원격 SocketAddress 를 반환한다. |
+| write | 데이터를 원격 피어로 출력한다. 이 데이터는 ChannelPipeline 으로 전달되며 플러시되기 전까지 큐에 저장된다. |
+| flush | 기반 전송(Socket) 으로 이전에 출력된 데이터를 플러시한다. |
+| writeAndFlush | write() 와 flush() 를 모두 호출하는 편의 메서드 |
+
+
+<br/>
+
+### Netty 가 제공하는 전송
+
+| 이름 | 패키지 | 설명 |
+| --- | --- | --- |
+| NIO | io.netty.channel.socket.nio | java.nio.channels 패키지를 기반으로 이용 (셀렉터 기반 방식) |
+| Epoll | io.netty.channel.epoll | epoll() 과 논블로킹 입출력을 위해 JNI 를 이용한다. 이 전송은 SO_REUSEPORT 와 마찬가지로 리눅스에서만 이용할 수 있으며, NIO 전송보다 빠르고 완전한 논블로킹이다. |
+| OIO | io.netty.channel.socket.oio | [java.net](http://java.net) 패키지를 기반으로 이용(블로킹 스트림 이용) |
+| 로컬 (Local) | io.netty.channel.local | VM에서 파이프를 통해 통신하는 데 이용되는 로컬 전송 |
+| 임베디드(Embeded) | io.netty.channel.embedded | 실제 네트워크 기반 전송 없이 ChannelHandler 를 이용할 수 있게 해주는 임베디드 전송, 이 전송은 ChannelHandler 구현을 테스트하는데 유용하다. |
+
+
+- NIO
+  - 새로운 Channel 이 수락되고 준비됨
+  - Channel 연결이 완료됨
+  - Channel 에 읽을 데이터가 있음
+  - Channel 을 이용해 데이터를 기록할 수 있음
+
+<br />
+
+
+- java.nio.channels.SelectionKey 클래스에 정의된 비트 패턴에 해당하는 상수가 나온다.
+- 애플리케이션이 알림을 요청하는 상태 변경의 집합을 지정할 수 있다.
+
+| 이름 | 설명 |
+| --- | --- |
+| OP_ACCEPT | 새로운 연결이 수락되고 Channel 이 생성되면 알린다. |
+| OP_CONNECT | 연결되면 알린다. |
+| OP_READ | Channel 에서 데이터를 읽을 수 있으면 알린다. |
+| OP_WRITE | Channel 로 데이터를 기록할 수 있으면 알린다. 소켓 버퍼가 완전히 차는 상황을 처리한다. 이러한 상황은 원격 피어의 처리 능력보다 데이터가 더 자주 전송될 때 흔히 발생한다. |
+
+
+<br />
+
+### NIO 내부 프로세스
+
+![Image](images/nio_process.png)
+
+<br />
+
+![Image](images/oio_process.png)
+
+
+- 네티가 입출력 작업이 완료되기를 기다리는 시간(밀리초)을 지정하는 SO_TIMEOUTSocket 플래그가 있다.
+- 지정한 시간 내에 작업을 완료하지 못하면 SocketTimeoutException 이 발생한다.
+- Netty 는 이 예외를 포착하고 처리 루프를 계속 진행하며, 다음 EventLoop 를 실행할 때 다시 시도한다.
+
+<br />
+
+### 제로 카피 (Zero-copy)
+
+- 제로 카피는 현재 NIO 와 Epoll 전송에서만 이용 가능한 기능으로서, 파일 시스템의 데이터를 커널 공간에서 사용자 공간으로 복사하는 과정을 생략해 빠르고 효과적으로 네트워크로 이동할 수 있게 해준다.
+- 모든 운영체제에서 이 기능을 지원하는 것은 아니다.
+- 데이터 암호화나 압축을 구현하는 파일 시스템에서는 이용할 수 없고, 파일의 원시 콘텐츠만 전송할 수 있다.
+- 반면, 이미 암호화된 파일을 전송하는 데는 문제가 없다.
+
+<br />
+
+### JVM 내부 통신용 로컬 전송
+
+- 네티는 동일한 JVM 내에서 실행되는 클라이언트와 서버 간 비동기 통신을 위한 로컬 전송을 제공한다.
+- 이 전송에서 서버 Channel 과 연결되는 SocketAddress 는 실제 네트워크 주소에 바인딩되지 않고 서버가 실행되는 동안 레지스트리에 저장되며, Channel 이 닫히면 레지스트리에서 등록이 해제된다.
+- 이 전송은 실제 네트워크 트래픽을 수신하지는 않으므로 다른 전송 구현과 상호 운용할 수 있다.
+- 이 전송을 이용하는 서버로 (동일한 JVM 에서) 연결하련느 클라이언트도 이 전송을 이용해야 한다.
+
+<br />
+
+### 전송 방법 사례
+
+- 논블로킹 코드 기반
+  - 코드 기반에 블로킹 호출이 없거나 블로킹 호출을 제한할 수 있다면 NIO 또는 epoll 을 이용하는 것이 좋다.
+  - NIO/epoll 은 다수의 동시 연결을 처리하기 위한 것이지만 동시 연결이 많지 않은 경우에도 잘 동작한다.
+  - 특히 여러 연결에 스레드를 공유할 수 있다는 것이 장점이다.
+
+
+- 블로킹 코드 기반
+  - 코드 기반이 블로킹 입출력에 의존하고 애플리케이션도 이와 같이 설계된 경우 곧바로 Netty 의 NIO 전송으로 변경하려 하면 블로킹 작업에서 문제가 발생할 수 있다.
+  - 따라서 먼저 OIO 로 시작한 다음 NIO 로 변경하는 마이그레이션 작업을 진행하는 것이 좋다.
+
+
+- 동일한 JVM 내의 통신
+  - 동일한 JVM 내의 통신은 네트워크를 사용하지 않는 로컬 전송을 이용할 수 있는 최적의 사용사례이다.
+  - 네티 코드 기반을 이용하면서 실제 네트워크 작업에서 발생하는 오버헤드를 모두 방지할 수 있다.
+  - 로컬 환경에서 권장
+
+
+- ChannelHandler 구현 테스트
+  - ChannelHandler 구현에 대한 단위 테스트를 만들 때는 임베디드 전송을 이용할 수 있다.
+  - 테스트용으로 권장
+
+
+
 
